@@ -77,27 +77,25 @@ public class ConfigManager {
         return mm.deserialize(msg);
     }
 
-    // ── RANKS ────────────────────────────────────────────────────────────────
+// ── RANKS ────────────────────────────────────────────────────────────────
 
-    public String getRankPrefix(String rankKey) {
-        return config.getString("ranks." + rankKey + ".prefix", "<gray>[?]</gray>");
-    }
-
-    public String getRankDisplay(String rankKey) {
-        return config.getString("ranks." + rankKey + ".display", rankKey);
-    }
-
-    public int getRankWeight(String rankKey) {
-        return config.getInt("ranks." + rankKey + ".weight", 99);
-    }
+public String getRankPrefix(String rankKey) {
+    return config.getString("ranks." + rankKey + ".prefix", "<gray>[?]</gray>");
 }
 
-    public String getDiscordUrl() {
-        return config.getString("discord.url", "discord.gg/deinserver");
+public String getRankDisplay(String rankKey) {
+    return config.getString("ranks." + rankKey + ".display", rankKey);
+}
 
-    public String getDiscordUrl() {
-        return config.getString("discord.url", "discord.gg/deinserver");
-    }
+public int getRankWeight(String rankKey) {
+    return config.getInt("ranks." + rankKey + ".weight", 99);
+}
+
+// ── DISCORD ─────────────────────────────────────────────────────────────
+
+public String getDiscordUrl() {
+    return config.getString("discord.url", "discord.gg/deinserver");
+}
 
     // ── ACTIONBAR ────────────────────────────────────────────────────────────
 
