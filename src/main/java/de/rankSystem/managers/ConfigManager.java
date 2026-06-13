@@ -3,9 +3,17 @@ package de.rankSystem.managers;
 import de.rankSystem.RankSystem;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 
 public class ConfigManager {
 
@@ -13,14 +21,105 @@ public class ConfigManager {
     private final MiniMessage mm = MiniMessage.miniMessage();
     private FileConfiguration config;
 
+    // Aktuelle Config-Version des Plugins – bei jedem Update erhöhen
+    private static final int CURRENT_CONFIG_VERSION = 1;
+
     public ConfigManager(RankSystem plugin) {
         this.plugin = plugin;
         reload();
     }
 
     public void reload() {
+        plugin.saveDefaultConfig();
         plugin.reloadConfig();
         config = plugin.getConfig();
+        migrateConfig();
+    }
+
+    // ── CONFIG MIGRATION ─────────────────────────────────────────────────────
+
+    /**
+     * Vergleicht die Server-Config mit der Standard-Config aus dem Plugin.
+     * Fehlende Keys werden automatisch ergänzt, vorhandene bleiben unberührt.
+     */
+    private void migrateConfig() {
+        int serverVersion = config.getInt("config-version", 0);
+
+        if (serverVersion >= CURRENT_CONFIG_VERSION) return;
+
+        plugin.getLogger().info("╔══════════════════════════════════════╗");
+        plugin.getLogger().info("║     Config-Migration wird gestartet  ║");
+        plugin.getLogger().info("╠══════════════════════════════════════╣");
+        plugin.getLogger().info("║  Version " + serverVersion + " → " + CURRENT_CONFIG_VERSION + " wird aktualisiert...   ║");
+        plugin.getLogger().info("╚══════════════════════════════════════╝");
+
+        // Standard-Config aus dem Plugin laden
+        InputStream defaultStream = plugin.getResource("config.yml");
+        if (defaultStream == null) return;
+
+        FileConfiguration defaultConfig = YamlConfiguration.loadConfiguration(
+                new InputStreamReader(defaultStream, StandardCharsets.UTF_8)
+        );
+
+        // Alle fehlenden Keys rekursiv ergänzen
+        int addedKeys = addMissingKeys(defaultConfig, config, "");
+
+        // Version aktualisieren
+        config.set("config-version", CURRENT_CONFIG_VERSION);
+
+        // Speichern
+        try {
+            config.save(new File(plugin.getDataFolder(), "config.yml"));
+        } catch (IOException e) {
+            plugin.getLogger().warning("Fehler beim Speichern der migrierten Config: " + e.getMessage());
+            return;
+        }
+
+        if (addedKeys > 0) {
+            plugin.getLogger().info("[RankSystem] Migration abgeschlossen: " + addedKeys + " neue Einträge hinzugefügt.");
+        } else {
+            plugin.getLogger().info("[RankSystem] Migration abgeschlossen: Keine neuen Einträge nötig.");
+        }
+    }
+
+    /**
+     * Geht rekursiv durch alle Keys der Standard-Config und fügt fehlende
+     * Einträge in die Server-Config ein. Gibt die Anzahl der hinzugefügten Keys zurück.
+     */
+    private int addMissingKeys(ConfigurationSection defaultSection, ConfigurationSection serverSection, String path) {
+        int count = 0;
+        Set<String> keys = defaultSection.getKeys(false);
+
+        for (String key : keys) {
+            String fullPath = path.isEmpty() ? key : path + "." + key;
+
+            // config-version überspringen (wird separat gesetzt)
+            if (fullPath.equals("config-version")) continue;
+
+            if (defaultSection.isConfigurationSection(key)) {
+                // Unterabschnitt → rekursiv weiter
+                ConfigurationSection defaultSub = defaultSection.getConfigurationSection(key);
+                ConfigurationSection serverSub = serverSection.getConfigurationSection(key);
+
+                if (serverSub == null) {
+                    // Ganzer Abschnitt fehlt → komplett übernehmen
+                    serverSection.set(key, defaultSection.get(key));
+                    plugin.getLogger().info("[RankSystem] Neuer Abschnitt hinzugefügt: " + fullPath);
+                    count++;
+                } else {
+                    // Abschnitt existiert → nur fehlende Keys darin ergänzen
+                    count += addMissingKeys(defaultSub, serverSub, fullPath);
+                }
+            } else {
+                // Einzelner Key
+                if (!serverSection.contains(key)) {
+                    serverSection.set(key, defaultSection.get(key));
+                    plugin.getLogger().info("[RankSystem] Neuer Eintrag hinzugefügt: " + fullPath + " = " + defaultSection.get(key));
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     // ── TAB ──────────────────────────────────────────────────────────────────
@@ -77,29 +176,29 @@ public class ConfigManager {
         return mm.deserialize(msg);
     }
 
-// ── RANKS ────────────────────────────────────────────────────────────────
+    // ── RANKS ────────────────────────────────────────────────────────────────
 
-public String getRankPrefix(String rankKey) {
-    return config.getString("ranks." + rankKey + ".prefix", "<gray>[?]</gray>");
-}
+    public String getRankPrefix(String rankKey) {
+        return config.getString("ranks." + rankKey + ".prefix", "<gray>[?]</gray>");
+    }
 
-public String getRankDisplay(String rankKey) {
-    return config.getString("ranks." + rankKey + ".display", rankKey);
-}
+    public String getRankDisplay(String rankKey) {
+        return config.getString("ranks." + rankKey + ".display", rankKey);
+    }
 
-public int getRankWeight(String rankKey) {
-    return config.getInt("ranks." + rankKey + ".weight", 99);
-}
+    public int getRankWeight(String rankKey) {
+        return config.getInt("ranks." + rankKey + ".weight", 99);
+    }
 
-// ── DISCORD ─────────────────────────────────────────────────────────────
+    // ── DISCORD ──────────────────────────────────────────────────────────────
 
-public String getDiscordUrl() {
-    return config.getString("discord.url", "discord.gg/deinserver");
-}
+    public String getDiscordUrl() {
+        return config.getString("discord.url", "discord.gg/deinserver");
+    }
 
     // ── ACTIONBAR ────────────────────────────────────────────────────────────
 
-    public java.util.List<String> getActionBarLines() {
+    public List<String> getActionBarLines() {
         return config.getStringList("actionbar.lines");
     }
 
@@ -124,5 +223,4 @@ public String getDiscordUrl() {
     public int getMotdFakeMax() {
         return config.getInt("motd.fake-max", 0);
     }
-
 }
