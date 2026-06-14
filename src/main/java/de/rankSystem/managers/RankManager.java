@@ -5,9 +5,9 @@ import de.rankSystem.utils.Rank;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
+import net.luckperms.api.node.Node;
 import net.luckperms.api.node.types.InheritanceNode;
 import net.luckperms.api.node.types.PermissionNode;
-import net.luckperms.api.query.QueryOptions;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
@@ -23,9 +23,6 @@ public class RankManager {
         this.luckPerms = plugin.getLuckPerms();
     }
 
-    /**
-     * Erstellt alle LuckPerms-Gruppen mit Permissions beim Start
-     */
     public void setupLuckPermsGroups() {
         for (Rank rank : Rank.values()) {
             String groupName = rank.getLuckPermsGroup();
@@ -38,7 +35,6 @@ public class RankManager {
                 plugin.getLogger().info("Gruppe erstellt/aktualisiert: " + groupName);
             });
         }
-
         setupGroupWeights();
     }
 
@@ -72,42 +68,62 @@ public class RankManager {
     }
 
     private void addInheritance(Group group, String parentName) {
-        luckPerms.getGroupManager().loadGroup(parentName).thenAccept(optParent -> {
-            optParent.ifPresent(parent ->
-                    group.data().add(InheritanceNode.builder(parent).build())
-            );
-        });
+        luckPerms.getGroupManager().loadGroup(parentName).thenAccept(optParent ->
+                optParent.ifPresent(parent ->
+                        group.data().add(InheritanceNode.builder(parent).build())
+                )
+        );
     }
 
     private void setupGroupWeights() {
         for (Rank rank : Rank.values()) {
             String groupName = rank.getLuckPermsGroup();
-            luckPerms.getGroupManager().loadGroup(groupName).thenAccept(optGroup -> {
-                optGroup.ifPresent(group -> {
-                    group.data().add(
-                            net.luckperms.api.node.types.PrefixNode.builder(
-                                    "[" + rank.getDisplayName() + "] ", rank.getWeight()
-                            ).build()
-                    );
-                    luckPerms.getGroupManager().saveGroup(group);
-                });
-            });
+            luckPerms.getGroupManager().loadGroup(groupName).thenAccept(optGroup ->
+                    optGroup.ifPresent(group -> {
+                        group.data().add(
+                                net.luckperms.api.node.types.PrefixNode.builder(
+                                        "[" + rank.getDisplayName() + "] ", rank.getWeight()
+                                ).build()
+                        );
+                        luckPerms.getGroupManager().saveGroup(group);
+                    })
+            );
         }
     }
 
     /**
-     * Gibt den Rang eines Spielers zurück (aus LuckPerms)
+     * FIX: Liest alle direkt zugewiesenen InheritanceNodes des Users und gibt
+     * den höchsten (niedrigstes weight) Rang zurück – nicht getPrimaryGroup().
+     * getPrimaryGroup() gibt manchmal "default" zurück, auch wenn owner gesetzt ist.
      */
     public Rank getPlayerRank(Player player) {
         User user = luckPerms.getUserManager().getUser(player.getUniqueId());
         if (user == null) return Rank.MITGLIED;
 
-        String primaryGroup = user.getPrimaryGroup();
-        return Rank.fromGroup(primaryGroup);
+        Rank highestRank = Rank.MITGLIED;
+
+        for (Node node : user.getNodes()) {
+            if (!(node instanceof InheritanceNode inheritNode)) continue;
+            String groupName = inheritNode.getGroupName();
+            Rank rank = Rank.fromGroup(groupName);
+            // Niedrigeres weight = höherer Rang (OWNER=1, MITGLIED=7)
+            if (rank.getWeight() < highestRank.getWeight()) {
+                highestRank = rank;
+            }
+        }
+
+        // Fallback: primaryGroup prüfen falls keine InheritanceNodes gefunden
+        if (highestRank == Rank.MITGLIED) {
+            String primary = user.getPrimaryGroup();
+            Rank fromPrimary = Rank.fromGroup(primary);
+            if (fromPrimary != Rank.MITGLIED) return fromPrimary;
+        }
+
+        return highestRank;
     }
 
     /**
-     * Setzt den Rang eines Spielers (async) – FIX: saveUser erst nach dem inner-async-Block
+     * Setzt den Rang – saveUser erst nach dem inneren async-Block (kein Race-Condition)
      */
     public CompletableFuture<Void> setPlayerRank(UUID uuid, Rank newRank, Rank oldRank) {
         return luckPerms.getUserManager().loadUser(uuid).thenCompose(user -> {
@@ -118,24 +134,22 @@ public class RankManager {
                 if (rank == Rank.MITGLIED) continue;
                 user.data().clear(node ->
                         node instanceof InheritanceNode &&
-                        ((InheritanceNode) node).getGroupName().equalsIgnoreCase(rank.getLuckPermsGroup())
+                        ((InheritanceNode) node).getGroupName()
+                                .equalsIgnoreCase(rank.getLuckPermsGroup())
                 );
             }
 
-            // Mitglied (default) → direkt speichern
             if (newRank == Rank.MITGLIED) {
                 user.setPrimaryGroup("default");
                 return luckPerms.getUserManager().saveUser(user);
             }
 
-            // Neue Gruppe laden und erst DANACH speichern (kein Race-Condition mehr)
             return luckPerms.getGroupManager().loadGroup(newRank.getLuckPermsGroup())
                     .thenCompose(optGroup -> {
                         optGroup.ifPresent(group -> {
                             user.data().add(InheritanceNode.builder(group).build());
                             user.setPrimaryGroup(newRank.getLuckPermsGroup());
                         });
-                        // saveUser wird nun garantiert NACH dem Setzen der Gruppe aufgerufen
                         return luckPerms.getUserManager().saveUser(user);
                     });
         });
