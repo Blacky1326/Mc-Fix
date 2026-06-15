@@ -23,15 +23,22 @@ public class TabManager {
 
     public void updatePlayer(Player player) {
         Rank rank = plugin.getRankManager().getPlayerRank(player);
+        boolean vanished = plugin.getVanishManager() != null && plugin.getVanishManager().isVanished(player);
+
         setupScoreboardTeam(player, rank);
         updateTabHeaderFooter();
-        Component tabName = buildTabName(player, rank);
+
+        Component tabName = buildTabName(player, rank, vanished);
         player.playerListName(tabName);
     }
 
-    private Component buildTabName(Player player, Rank rank) {
-        // [RANG] Name   ping ms
+    public void updateAllPlayers() {
+        Bukkit.getOnlinePlayers().forEach(this::updatePlayer);
+    }
+
+    private Component buildTabName(Player player, Rank rank, boolean vanished) {
         String ping = getPingFormatted(player);
+
         String nameTag = switch (rank) {
             case OWNER     -> "<gradient:#FF6B6B:#FFD93D><bold>" + player.getName() + "</bold></gradient>";
             case ADMIN     -> "<gradient:#FF8C00:#FFD700><bold>" + player.getName() + "</bold></gradient>";
@@ -42,28 +49,23 @@ public class TabManager {
             case MITGLIED  -> "<gray>" + player.getName() + "</gray>";
         };
 
-        return rank.getTabPrefix()
+        // 👻 Prefix für Staff die vanished Spieler sehen
+        String vanishPrefix = vanished ? "<gradient:#9400D3:#FF1493>👻 </gradient>" : "";
+
+        return mm.deserialize(vanishPrefix)
+                .append(rank.getTabPrefix())
                 .append(mm.deserialize(nameTag))
                 .append(mm.deserialize(" <dark_gray>| " + ping + "</dark_gray>"));
     }
 
-    /**
-     * Returns a colored ping string, e.g. "<green>12ms</green>"
-     */
     private String getPingFormatted(Player player) {
         int ping = player.getPing();
         String color;
-        if (ping < 50) {
-            color = "#00FF7F";       // grün
-        } else if (ping < 100) {
-            color = "#7FFF00";       // gelbgrün
-        } else if (ping < 150) {
-            color = "#FFD700";       // gelb
-        } else if (ping < 200) {
-            color = "#FFA500";       // orange
-        } else {
-            color = "#FF4444";       // rot
-        }
+        if      (ping < 50)  color = "#00FF7F";
+        else if (ping < 100) color = "#7FFF00";
+        else if (ping < 150) color = "#FFD700";
+        else if (ping < 200) color = "#FFA500";
+        else                 color = "#FF4444";
         return "<color:" + color + ">" + ping + "ms</color>";
     }
 

@@ -4,6 +4,7 @@ import de.rankSystem.commands.*;
 import de.rankSystem.listeners.ChatListener;
 import de.rankSystem.listeners.ModerationListener;
 import de.rankSystem.listeners.PlayerJoinListener;
+import de.rankSystem.listeners.VanishListener;
 import de.rankSystem.managers.*;
 import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
@@ -19,6 +20,8 @@ public class RankSystem extends JavaPlugin {
     private ConfigManager configManager;
     private ActionBarManager actionBarManager;
     private ModerationManager moderationManager;
+    private VanishManager vanishManager;
+    private TeleportManager teleportManager;
     private StaffChatCommand staffChatCommand;
 
     @Override
@@ -33,10 +36,12 @@ public class RankSystem extends JavaPlugin {
 
         saveDefaultConfig();
 
-        configManager      = new ConfigManager(this);
-        rankManager        = new RankManager(this);
-        tabManager         = new TabManager(this);
-        moderationManager  = new ModerationManager(this);
+        configManager    = new ConfigManager(this);
+        rankManager      = new RankManager(this);
+        vanishManager    = new VanishManager(this);
+        teleportManager  = new TeleportManager(this);
+        tabManager       = new TabManager(this);
+        moderationManager = new ModerationManager(this);
 
         rankManager.setupLuckPermsGroups();
 
@@ -51,6 +56,7 @@ public class RankSystem extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new PlayerJoinListener(this), this);
         Bukkit.getPluginManager().registerEvents(new ChatListener(this), this);
         Bukkit.getPluginManager().registerEvents(new ModerationListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new VanishListener(this), this);
 
         // Commands
         getCommand("rank").setExecutor(new RankCommand(this));
@@ -78,18 +84,36 @@ public class RankSystem extends JavaPlugin {
         getCommand("staffchat").setExecutor(staffChatCommand);
         getCommand("staffchat").setTabCompleter(staffChatCommand);
 
+        VanishCommand vanishCmd = new VanishCommand(this);
+        getCommand("vanish").setExecutor(vanishCmd);
+        getCommand("vanish").setTabCompleter(vanishCmd);
+
+        TeleportCommand tpCmd     = new TeleportCommand(this, "tp");
+        TeleportCommand tpaCmd    = new TeleportCommand(this, "tpa");
+        TeleportCommand tpAccept  = new TeleportCommand(this, "tpaccept");
+        TeleportCommand tpDeny    = new TeleportCommand(this, "tpdeny");
+
+        getCommand("tp").setExecutor(tpCmd);
+        getCommand("tp").setTabCompleter(tpCmd);
+        getCommand("tpa").setExecutor(tpaCmd);
+        getCommand("tpa").setTabCompleter(tpaCmd);
+        getCommand("tpaccept").setExecutor(tpAccept);
+        getCommand("tpdeny").setExecutor(tpDeny);
+
         Bukkit.getOnlinePlayers().forEach(p -> tabManager.updatePlayer(p));
 
-        // Auto-Update Tab-Liste alle 2 Sekunden
+        // Auto-Update Tab alle 2 Sekunden
         Bukkit.getScheduler().runTaskTimer(this, () ->
-            Bukkit.getOnlinePlayers().forEach(p -> tabManager.updatePlayer(p)),
-        40L, 40L);
+                Bukkit.getOnlinePlayers().forEach(p -> tabManager.updatePlayer(p)),
+                40L, 40L);
 
         getLogger().info("RankSystem erfolgreich gestartet!");
     }
 
     @Override
     public void onDisable() {
+        if (vanishManager != null)   vanishManager.removeAll();
+        if (teleportManager != null) teleportManager.cleanup();
         getLogger().info("RankSystem wurde deaktiviert.");
     }
 
@@ -101,12 +125,14 @@ public class RankSystem extends JavaPlugin {
         return true;
     }
 
-    public static RankSystem getInstance()            { return instance; }
-    public LuckPerms getLuckPerms()                   { return luckPerms; }
-    public RankManager getRankManager()               { return rankManager; }
-    public TabManager getTabManager()                 { return tabManager; }
-    public ConfigManager getConfigManager()           { return configManager; }
-    public ActionBarManager getActionBarManager()     { return actionBarManager; }
-    public ModerationManager getModerationManager()   { return moderationManager; }
-    public StaffChatCommand getStaffChatCommand()     { return staffChatCommand; }
+    public static RankSystem getInstance()          { return instance; }
+    public LuckPerms getLuckPerms()                 { return luckPerms; }
+    public RankManager getRankManager()             { return rankManager; }
+    public TabManager getTabManager()               { return tabManager; }
+    public ConfigManager getConfigManager()         { return configManager; }
+    public ActionBarManager getActionBarManager()   { return actionBarManager; }
+    public ModerationManager getModerationManager() { return moderationManager; }
+    public VanishManager getVanishManager()         { return vanishManager; }
+    public TeleportManager getTeleportManager()     { return teleportManager; }
+    public StaffChatCommand getStaffChatCommand()   { return staffChatCommand; }
 }

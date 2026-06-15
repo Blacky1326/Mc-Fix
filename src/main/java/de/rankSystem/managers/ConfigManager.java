@@ -223,4 +223,16 @@ public class ConfigManager {
     public int getMotdFakeMax() {
         return config.getInt("motd.fake-max", 0);
     }
+    public String getVanishFakeJoin() {
+        return config.getString("vanish.fake-join",
+                "<gray>%name% ist dem Server beigetreten.</gray>");
+    }
+    // ── TELEPORT ─────────────────────────────────────────────────────────────
+
+    public int getTpCooldown()        { return config.getInt("teleport.cooldown", 60); }
+    public int getTpCountdown()       { return config.getInt("teleport.countdown", 5); }
+    public int getTpRequestTimeout()  { return config.getInt("teleport.request-timeout", 30); }
+    public double getTpMoveTolerance(){ return config.getDouble("teleport.move-tolerance", 0.22); }
+
+
 }

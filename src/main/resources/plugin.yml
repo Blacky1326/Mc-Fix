@@ -3,7 +3,7 @@ version: 1.0.0
 main: de.rankSystem.RankSystem
 api-version: '1.21'
 author: YourName
-description: Neon Rank System mit LuckPerms, Tab-Liste, Chat-Prefix, Moderation
+description: Neon Rank System mit LuckPerms, Tab-Liste, Chat-Prefix, Moderation & Vanish
 
 depend:
   - LuckPerms
@@ -50,8 +50,12 @@ commands:
     usage: /staffchat <Nachricht>
     permission: ranksystem.mod
 
+  vanish:
+    description: Im Vanish-Modus verschwinden (Mod+)
+    usage: /vanish [Spieler]
+    permission: ranksystem.vanish
+
 permissions:
-  # Admin-Permissions
   ranksystem.admin:
     description: Zugriff auf /rank, /tempban Befehle
     default: op
@@ -60,7 +64,10 @@ permissions:
     description: Moderator-Funktionen (warn, mute, sc)
     default: false
 
-  # Rang-Permissions (von LuckPerms automatisch vergeben)
+  ranksystem.vanish:
+    description: Vanish-Befehl nutzen (Mod+)
+    default: false
+
   ranksystem.rank.owner:
     description: Owner-Rang
     default: false
@@ -92,3 +99,20 @@ permissions:
   ranksystem.streamer:
     description: Streamer-Funktionen
     default: false
+
+  tp:
+    description: Sofort zu einem Spieler teleportieren (Mod+)
+    usage: /tp <Spieler>
+    permission: ranksystem.mod
+
+  tpa:
+    description: Teleport-Anfrage an einen Spieler senden
+    usage: /tpa <Spieler>
+
+  tpaccept:
+    description: Teleport-Anfrage annehmen
+    usage: /tpaccept
+
+  tpdeny:
+    description: Teleport-Anfrage ablehnen
+    usage: /tpdeny
