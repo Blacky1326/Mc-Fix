@@ -227,6 +227,10 @@ public class ConfigManager {
         return config.getString("vanish.fake-join",
                 "<gray>%name% ist dem Server beigetreten.</gray>");
     }
+    public String getVanishFakeQuit() {
+        return config.getString("vanish.fake-quit",
+                "<gray>%name% hat den Server verlassen.</gray>");
+    }
     // ── TELEPORT ─────────────────────────────────────────────────────────────
 
     public int getTpCooldown()        { return config.getInt("teleport.cooldown", 60); }

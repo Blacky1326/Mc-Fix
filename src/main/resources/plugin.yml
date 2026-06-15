@@ -39,6 +39,11 @@ commands:
     usage: /tempban <Spieler> <Dauer> [Grund]
     permission: ranksystem.admin
 
+  unban:
+    description: Spieler entbannen
+    usage: /unban <Spieler>
+    permission: ranksystem.admin
+
   sc:
     description: Staff-Chat
     usage: /sc <Nachricht> | /sc toggle

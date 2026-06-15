@@ -78,6 +78,10 @@ public class RankSystem extends JavaPlugin {
         getCommand("tempban").setExecutor(tempBanCmd);
         getCommand("tempban").setTabCompleter(tempBanCmd);
 
+        UnbanCommand unbanCmd = new UnbanCommand(this);
+        getCommand("unban").setExecutor(unbanCmd);
+        getCommand("unban").setTabCompleter(unbanCmd);
+
         staffChatCommand = new StaffChatCommand(this);
         getCommand("sc").setExecutor(staffChatCommand);
         getCommand("sc").setTabCompleter(staffChatCommand);
