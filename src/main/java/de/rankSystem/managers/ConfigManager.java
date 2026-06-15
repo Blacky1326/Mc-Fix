@@ -22,7 +22,7 @@ public class ConfigManager {
     private FileConfiguration config;
 
     // Aktuelle Config-Version des Plugins – bei jedem Update erhöhen
-    private static final int CURRENT_CONFIG_VERSION = 1;
+    private static final int CURRENT_CONFIG_VERSION = 2;
 
     public ConfigManager(RankSystem plugin) {
         this.plugin = plugin;
