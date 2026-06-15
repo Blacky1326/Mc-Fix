@@ -60,6 +60,23 @@ commands:
     usage: /vanish [Spieler]
     permission: ranksystem.vanish
 
+  tp:
+    description: Sofort zu einem Spieler teleportieren (Mod+)
+    usage: /tp <Spieler>
+    permission: ranksystem.mod
+
+  tpa:
+    description: Teleport-Anfrage an einen Spieler senden
+    usage: /tpa <Spieler>
+
+  tpaccept:
+    description: Teleport-Anfrage annehmen
+    usage: /tpaccept
+
+  tpdeny:
+    description: Teleport-Anfrage ablehnen
+    usage: /tpdeny
+
 permissions:
   ranksystem.admin:
     description: Zugriff auf /rank, /tempban Befehle
@@ -104,20 +121,3 @@ permissions:
   ranksystem.streamer:
     description: Streamer-Funktionen
     default: false
-
-  tp:
-    description: Sofort zu einem Spieler teleportieren (Mod+)
-    usage: /tp <Spieler>
-    permission: ranksystem.mod
-
-  tpa:
-    description: Teleport-Anfrage an einen Spieler senden
-    usage: /tpa <Spieler>
-
-  tpaccept:
-    description: Teleport-Anfrage annehmen
-    usage: /tpaccept
-
-  tpdeny:
-    description: Teleport-Anfrage ablehnen
-    usage: /tpdeny
