@@ -1,10 +1,12 @@
 package de.rankSystem.listeners;
 
 import de.rankSystem.RankSystem;
+import org.bukkit.entity.Creature;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -47,6 +49,19 @@ public class VanishListener implements Listener {
                         // Quit-Message unterdrücken — Spieler war für normale schon "weg"
                         event.quitMessage(null);
                     });
+        }
+    }
+
+    /**
+     * Verhindert, dass Mobs vanished Spieler anvisieren.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onMobTarget(EntityTargetLivingEntityEvent event) {
+        if (!(event.getTarget() instanceof Player target)) return;
+        if (!(event.getEntity() instanceof Creature)) return;
+
+        if (plugin.getVanishManager().isVanished(target)) {
+            event.setCancelled(true);
         }
     }
 }

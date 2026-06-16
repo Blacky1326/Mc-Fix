@@ -44,6 +44,11 @@ commands:
     usage: /unban <Spieler>
     permission: ranksystem.admin
 
+  gm:
+    description: Gamemode zwischen Creative und Survival wechseln (Admin+)
+    usage: /gm [Spieler]
+    permission: ranksystem.admin
+
   sc:
     description: Staff-Chat
     usage: /sc <Nachricht> | /sc toggle
@@ -85,6 +90,8 @@ permissions:
   ranksystem.mod:
     description: Moderator-Funktionen (warn, mute, sc)
     default: false
+    children:
+      ranksystem.vanish: true
 
   ranksystem.vanish:
     description: Vanish-Befehl nutzen (Mod+)

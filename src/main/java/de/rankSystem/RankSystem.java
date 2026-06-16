@@ -82,6 +82,10 @@ public class RankSystem extends JavaPlugin {
         getCommand("unban").setExecutor(unbanCmd);
         getCommand("unban").setTabCompleter(unbanCmd);
 
+        GamemodeCommand gmCmd = new GamemodeCommand(this);
+        getCommand("gm").setExecutor(gmCmd);
+        getCommand("gm").setTabCompleter(gmCmd);
+
         staffChatCommand = new StaffChatCommand(this);
         getCommand("sc").setExecutor(staffChatCommand);
         getCommand("sc").setTabCompleter(staffChatCommand);
